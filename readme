@@ -1,1 +1,13 @@
 We share excercises and resources about learning data validation using R and building corresponding workflows and dynamical reports
+
+
+References for rule based data validation:
+
+
+The great R-packages developed by our colleagues at Statistics Nehterlands:
+
+https://github.com/data-cleaning and all packages on CRAN
+
+A very good cookbook of the validate-package:
+
+MPJ van der Loo (2020) The Data Validation Cookbook version 1.0.1. https://data-cleaning.github.io/validate
