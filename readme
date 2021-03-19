@@ -4,10 +4,10 @@ We share excercises and resources about learning data validation using R and bui
 References for rule based data validation:
 
 
-The great R-packages developed by our colleagues at Statistics Nehterlands:
+- The great R-packages developed by our colleagues at Statistics Nehterlands:
 
 https://github.com/data-cleaning and all packages on CRAN
 
-A very good cookbook of the validate-package:
+- A very good cookbook of the validate-package and  not only:
 
 MPJ van der Loo (2020) The Data Validation Cookbook version 1.0.1. https://data-cleaning.github.io/validate
