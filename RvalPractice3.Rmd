@@ -1,0 +1,350 @@
+---
+title: "Automated report example"
+author: "Author"
+date: "March 2021"
+output:
+  pdf_document: default
+  word_document: default
+  html_document: default
+params:
+  year:
+    label: Year
+    value: 2017
+    input: slider
+    min: 2010
+    max: 2021
+    step: 1
+    sep: ''
+  data:
+    label: 'Input dataset:'
+    value: some_data.csv
+    input: file
+---
+
+\vspace{0.3cm}
+
+```{r}
+
+# the parameters in the Rmd-file header can be chosen interactively, 
+# by using "Knit with parameters"
+
+# or directly, by running:
+
+# rmarkdown::render("RvalPractice0.Rmd", params = list(
+#   year = 2021,
+#   file = "our_favourite.csv"
+# ))
+
+# Try this!
+
+```
+
+# Useful links:
+
+- for downloading and installing R, RStudio on MacOSX, see the example at:
+https://web.stanford.edu/~kjytay/courses/stats32-aut2018/Session%201/Installation%20for%20Mac.html 
+
+- for using open data from the web:
+https://theodi.org/article/how-to-use-r-to-access-data-on-the-web/
+
+(_hint_: use functions like read.csv(), read.url(), various API's or the RCurl-package )
+
+
+
+# Important notes:
+
+- We may all raise issues in the github repository 
+
+https://github.com/violetacln/learnRval  
+
+about any questions, proposals, ideas we like to share!
+
+
+- We do as much as possible here, in our interactive meeting: 
+
+  - we run the examples included in these RvalPractice - files
+
+  - we could also propose new ones and/or run code on different data.
+
+
+
+# Introduction: 
+
+## Data-set and main information needed for validation
+
+about: time-variables, modeled - variables, imputed-variables, if the case
+
+Assume a data-frame has been built.
+
+Assume rules set has been built.
+
+Example of notations: 
+  
+  ```{r datadef, echo=TRUE, eval=FALSE}
+  
+## data rules, built, read into a data frame and then a validator object
+# vrules <- 
+
+## modifier rules, built, read into a data frame and then a validator object
+# mrules <- 
+# v <-
+
+## main data set as a data.frame
+#df <- 
+# data <- 
+
+##data sets which need to be compared (could be same data measured at 
+##different moments in time), as data.frames
+#df1<- 
+#df2<-
+
+##time series we need to check, if it is ths case
+#tsuniv
+#tsmultiv
+```
+
+__Important note:  when we want to create our report and show all results, we make "eval=TRUE" in the R-chunks which follow.__
+
+
+
+
+
+# Part 3: Take away exercises on: error correction, complex output validation, Bayesian validation 
+
+
+
+
+## Error Detection: more on error location 
+
+Which field values should we correct, on each record?
+
+
+```{r error location, echo=TRUE, eval=FALSE}
+
+library(errorlocate)
+
+rules <- validator(price >500, carat > 0.2)   # check summary!
+data <- ggplot2::diamonds
+
+  error_locations <- locate_errors(data, rules)
+  head(values(error_locations))  
+  summary(error_locations)
+ 
+data_marked_errors <- replace_errors(data, rules)
+
+# faulty data was replaced with NA
+print(data_marked_errors)
+er <- errors_removed(data_marked_errors)
+#print(er)
+summary(er)
+#er$errors
+sum(is.na(data))
+sum(is.na(data_marked_errors))  # our values to be imputed!
+
+
+
+```
+
+
+
+
+## Error correction: apply modifier rules
+
+```{r modifier rules, echo=TRUE, eval=FALSE}
+
+library(dcmodify)
+
+df <- ggplot2::diamonds
+m <- modifier(if (price <= 500) price <- 500)
+
+modified <- modify(df, m)
+head(modified, 3)
+
+
+```
+
+
+
+## Error correction: modifier rules discovery option: association rules discovery
+```{r association rules, echo=TRUE, eval=FALSE}
+
+df  <- ggplot2::diamonds[,2:4]
+#(citation("arules"))
+library(arules)   
+tdata <- as(df, "transactions")
+
+#method 1 of clustering: eclat algorithm
+eclat_res <- inspect(eclat(tdata, 
+                           parameter = list(supp=0.07, maxlen=15)))
+eclat_plot <- itemFrequencyPlot(tdata, topN=10, 
+                          type="absolute", main="item freguency")
+
+summary_data <- summary(tdata)
+
+eclat_summary <- summary(eclat(tdata, 
+                          parameter = list(supp=0.07, maxlen=15)))
+
+
+#method 2 of clustering: apriori algorithm
+rules <- apriori(tdata)
+apriori_summary <- summary(rules)
+apriori_res <- inspect(rules)
+
+```
+
+
+
+## Error correction: imputation and adjustments
+
+
+```{r , echo=TRUE, eval=FALSE}
+
+library(simputation)
+
+dat <- ggplot2::diamonds
+
+dat[1:3,1] <- dat[3:7,2]  <- NA
+head(dat,10)
+
+da1 <- impute_lm(dat, carat ~ clarity+depth+price)
+head(da1,3)
+
+da2 <- impute_median(da1, cut ~ x+y+z)
+head(da2,3)
+
+#chaining all these methods is possible, with %>% of magrittr - package
+
+```
+
+
+## Comparing data sets
+
+```{r , echo=TRUE, eval=FALSE}
+
+vrules <- validate::validator(price >500, carat > 0.2)   # check summary!
+input <- ggplot2::diamonds
+
+m <- dcmodify::modifier(if (price <= 500) price <- 500)
+cleaned <- dcmodify::modify(df, m)
+
+
+comparison <- validate::compare(vrules
+                    , input , cleaned 
+                    )
+
+comparison
+
+par(mfrow=c(2,1))
+barplot(comparison)
+plot(comparison)
+
+```
+
+Create more comparisons!
+
+
+
+# Validation of results with data mining methods
+
+
+## Identify clusters
+
+
+```{r clusters, echo=TRUE, eval=FALSE}
+
+df <- diamonds[1:2000,c("carat", "depth", "price")]
+
+# find optimal number of clusters
+  dff <- scale(df)
+ 
+ ### factoextra::fviz_nbclust(dff, kmeans, method = "gap_stat")
+
+# compute and visualise
+  set.seed(123)
+  km.res <- kmeans(dff, 5, nstart = 25)
+  # visualize
+  factoextra::fviz_cluster(km.res, data = dff,
+               ellipse.type = "convex",
+               palette = "jco",
+               repel = TRUE,
+               ggtheme = ggplot2::theme_minimal())
+
+  # try to find an optimum!
+  
+
+# compare also with PAM clustering
+  # Compute PAM
+  pam.res <- cluster::pam(dff, 5)
+  # Visualize
+  factoextra::fviz_cluster(pam.res)  
+  
+   # try to find an optimum!
+  
+```
+
+
+
+## Exploring and reviewing models
+
+See the example in the slides of Part 3. Try new data!
+
+```{r models, glm or ts: residuals and goodness of fit, echo=TRUE, eval=FALSE}
+
+
+# if a glm type of model, then
+#rev_model(model_a)
+##if a time series model, then
+##rev_model_ts(model_a)
+```
+
+
+## Exploring and reviewing time series characteristics
+
+See the example in the slides of Part 3. Try new data!
+
+```{r time series characteristics: univariate and multivariate, echo=TRUE, eval=FALSE}
+
+
+#for all time series, univariate
+#rev_ts_univ(tsuniv)
+##for any multivariate time series
+##rev_ts_multiv(tsmultiv)
+```
+
+
+
+
+# Alternative: Bayesian validation, simultaneous detection and correction of errors
+
+Try this with different parameters and number of iterations. 
+
+Try new data!
+
+
+```{r Bayesian validation, echo=TRUE, eval=FALSE}
+
+library(EditImputeCont)
+
+## read the toy example data, which has two ratio edits and a balance edit
+data(SimpleEx)
+
+data1 = readData(Y.original=SimpleEx$D.obs, ratio=SimpleEx$Ratio.edit, 
+	range=NULL, balance=SimpleEx$Balance.edit)
+
+## create and initialize the model with 15 DP mixture components
+ model1 = createModel(data.obj=data1, K=15)
+ 
+## Run an iteration of MCMC
+model1$Iterate()
+dim(model1$Y.edited)
+## [1]   1000   4  
+# Edit-imputed datasets of n=1000 records with p=4 variables
+
+## Please see the example in the demo folder for more details
+```
+
+
+
+
+
+

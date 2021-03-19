@@ -1,0 +1,408 @@
+---
+title: "Automated report example"
+author: "Author"
+date: "March 2021"
+output:
+  pdf_document: default
+  word_document: default
+  html_document: default
+params:
+  year:
+    label: Year
+    value: 2017
+    input: slider
+    min: 2010
+    max: 2021
+    step: 1
+    sep: ''
+  data:
+    label: 'Input dataset:'
+    value: some_data.csv
+    input: file
+---
+
+\vspace{0.3cm}
+
+```{r}
+
+# the parameters in the Rmd-file header can be chosen interactively, 
+# by using "Knit with parameters"
+
+# or directly, by running:
+
+# rmarkdown::render("RvalPractice0.Rmd", params = list(
+#   year = 2021,
+#   file = "our_favourite.csv"
+# ))
+
+# Try this!
+
+```
+
+# Useful links:
+
+- for downloading and installing R, RStudio on MacOSX, see the example at:
+https://web.stanford.edu/~kjytay/courses/stats32-aut2018/Session%201/Installation%20for%20Mac.html 
+
+- for using open data from the web:
+https://theodi.org/article/how-to-use-r-to-access-data-on-the-web/
+
+(_hint_: use functions like read.csv(), read.url(), various API's or the RCurl-package )
+
+
+
+# Important notes:
+
+- We may all raise issues in the github repository https://github.com/violetacln/learnRval  
+about any questions, proposals, ideas we might like to share!
+
+
+- We do as much as possible here, in our interactive meeting: 
+
+  - we run the examples included in these RvalPractice - files
+
+  - we could also propose new ones and/or run code on different data.
+
+
+
+# Introduction: 
+
+## Data-set and main information needed for validation
+
+about: time-variables, modeled - variables, imputed-variables, if the case
+
+Assume a data-frame has been built.
+
+Assume rules set has been built.
+
+Example of notations: 
+  
+  ```{r datadef, echo=TRUE, eval=FALSE}
+  
+## data rules, built, read into a data frame and then a validator object
+# vrules <- 
+
+## modifier rules, built, read into a data frame and then a validator object
+# mrules <- 
+
+## main data set as a data.frame
+#df <- 
+
+##data sets which need to be compared (could be same data measured at 
+##different moments in time), as data.frames
+#df1<- 
+#df2<-
+
+##time series we need to check, if it is ths case
+#tsuniv
+#tsmultiv
+```
+
+__Important note:  when we want to create our report and show all results, we make "eval=TRUE" in the R-chunks which follow.__
+
+
+
+
+
+# Part 1: Data overview and examples of validation rules
+
+
+## Simplest data overview and univariate analysis
+
+Let us try this example for our favorite data set (df).
+
+```{r, eval=FALSE, echo=TRUE}
+library(validate)
+
+df <- SBS2000   # or iris, or any real data set you like!
+##variable types
+dnames <-names( DataExplorer::split_columns(df)$discrete)
+cnames <- names( DataExplorer::split_columns(df)$continuous)
+
+##short overview
+  #summary(df)
+  Hmisc::describe(df)
+  
+##data univariate plots
+  DataExplorer::plot_intro(df)
+  DataExplorer::plot_missing(df)
+  funModeling::freq(df)  #DataExplorer::plot_bar(df, maxcat=450)
+  funModeling::plot_num(df) #DataExplorer::plot_histogram(df)
+  
+##qq-plots, overall and conditional
+  DataExplorer::plot_qq(df)
+  DataExplorer::plot_qq(df, by="size")   ## Species, if use df <- iris
+
+```
+
+
+ - Let us repeat for data set "diamonds" in "ggplot2" package!
+
+ - We can also try other functions/packages which show same type of overview.
+Which ones did/do you prefer?
+
+
+
+## Error Detection: Confronting data and rules
+
+See exercise 1 in Part 1 - course slides:
+
+(propose/run F, Cond1, Cond2, forbidden_keys, is_complete, for SBS2000 or samplonomy data)
+
+
+### ex.1.1: Examples of "balance" conditions
+
+ - First, from https://cran.r-project.org/web/packages/validate/vignettes/ 
+
+
+```{r , echo=FALSE, eval=FALSE}  
+
+# no echo here! this just for your convenience, do a run-test
+
+library(validate)
+data("SBS2000")
+str(SBS2000)
+
+rules1 <- validator(
+    total.rev - profit == total.costs
+  , turnover + other.rev == total.rev
+  , profit <= 0.6*total.rev
+)
+
+out1 <- confront(SBS2000, rules1)
+summary(out1)
+plot(out1)
+
+```
+
+
+
+
+ - Second example, built by us, like:
+
+
+```{r , echo=TRUE, eval=FALSE}
+#rule_ex1 <- validator(F>= 0)
+
+data(diamonds, package="ggplot2")
+str(diamonds)
+
+rules1B <- validator(
+   price >300
+  , depth * carat > 11
+  , depth * carat < 328  # change this value into lower/higher and see what happens!
+)
+
+out1B <- confront(diamonds, rule1s1B)
+summary(out1B)
+
+```
+
+
+### ex.1.2. Example of conditional restrictions (If Condition 1, then Condition 2) 
+
+
+```{r , echo=TRUE, eval=FALSE}
+# rule_ex2 <- validator(if (Cond1) Cond2)
+
+# plot(diamonds$carat, diamonds$price)
+
+rules2 <- validator(if (carat > 4) price > 1500)
+out2 <- confront(diamonds, rules2)
+summary(out2)
+
+```
+
+
+
+### ex.1.3. Forbidden patterns
+
+```{r, echo=TRUE, eval=FALSE}
+# rule_ex3 <- validator( does_not_contain(glob(forbidden_keys))) )
+
+# data frame of combinations we do not allow
+our_forbidden <- data.frame(cut="Fa*", clarity="VVS*")
+  
+rules3 <- validator(does_not_contain(glob(forbidden_keys=our_forbidden)))
+out3 <- confront(diamonds, rules3)
+
+summary(out3)
+
+# violating(diamonds, out3)
+
+```
+
+
+### ex.1.4. Completeness of records
+
+```{r, echo=TRUE, eval=FALSE}
+# is_complete($Y_1$, ...)  # result: one T/F per line
+# all_complete(Y)         # result: one T/F
+
+rules4 <- validator(is_complete(depth))
+out4 <- confront(diamonds, rules4)
+summary(out4)
+
+# introduce some NA values, using naniar -  package
+something <- max(diamonds$x)
+diamonds4b <- naniar::replace_with_na(diamonds, replace=list(x = something) )
+#or 
+# we might like to use dplyr - package:
+# diamonds4b <- diamonds
+# diamonds4b$x <- dplyr::na_if(diamonds4b$x, something)
+
+rules4b <- validator( is_complete(x)
+                    , all_complete(x)
+                    , is_complete(x,y,z)
+                    )
+out4b <- confront(diamonds4b, rules4b)
+summary(out4b)
+
+# note the differences!
+
+```
+
+
+
+### ex. 1.5. More checks = more functions!
+
+Examples of:
+
+- Conditions on statistical summary measures (per variable(s))
+
+```{r, echo=TRUE, eval=FALSE}
+
+# vs1 example in the slides
+rules5 <- validator(
+                 mean(x) > 5
+                , cor(price, carat) > 0
+                , range(price)[1] < 500
+                , sd(y) > 1
+                    )
+out5 <- confront(diamonds, rules5)
+summary(out5)
+
+```
+
+
+
+- Rules for aggregated data: _rule(Cond,by)_ 
+
+
+```{r, echo=TRUE, eval=FALSE}
+
+#vs2 example in our slides
+rules6 <- validator( 
+              exists_one(color=="J", by=list(cut, carat))
+            , exists_any(clarity="VS1", by=color)  
+            , depth >= 1.2*do_by(depth, by=clarity, fun=mean, na.rm=TRUE)
+                    )
+out6 <- confront(diamonds, rules6)
+summary(out6)
+
+
+
+```
+
+
+
+
+- Hierarchical aggregation structures: _hierarchy()_by
+
+
+```{r, echo=TRUE, eval=FALSE}
+
+#vha - example in our slides
+## study first:
+#?hierarchy
+
+d <-  data.frame( code =c("01.1", "02.1", "01.2" 
+                          ,"01.3", "02.2", "01", "02"
+                          ,"A")
+                , city = c("Seltjarnarnes", "Akureyri", "Reykjavik" 
+                        ,"OtherCA", "OtherNonCA", "CapitalArea", "NonCA"
+                        ,"All")
+                , swimmingpools =c(1, 10, 1 ,5 , 22 ,7, 23, 30)
+                  )
+
+dgeo <- data.frame( 
+                    code=c("A", "01", "02", "01.1", "01.2", "01.3", "02.1", "02.2")
+                  , parent=c("-", "A", "A", "01", "01", "01", "02", "02")
+                   )
+
+d$check <- validate::hierarchy(d$swimmingpools, d$code, hierarchy = dgeo)
+
+rule7 <- validator(
+  hierarchy(swimmingpools, city, hierarchy=ref$codelist, by=list(city))
+   )
+
+# check 
+# list(codelist=dgeo)$codelist
+# to make sure 
+
+out7 <- confront(d, rule7, ref=list(codelist=dgeo))
+summary(out7)
+
+
+```
+
+May take a look at the examples in the handbook as well!
+
+
+- Other checks made easy
+
+We also learn how to use "check_that()", although we can reformulate by building validators
+
+
+```{r, echo=TRUE, eval=FALSE}
+
+# in_range
+
+check_that(diamonds, in_range(z, 0, 32))
+# is equivalent to
+rule8 <- validator(in_range(z, 0, 32))
+out8 <- confront(diamonds, rule8)
+out8
+
+
+```
+
+
+
+
+```{r, echO=TRUE, eval=FALSE}
+# contains_at_least
+# does_not_contain
+# contains_exactly
+
+
+## Check that data is present for all years in 2000-2020
+mydat <- data.frame(
+      year = 2000:2020
+    , value = sample(20:50,length(2000:2020))
+    )
+
+# Method 1: creating a data frame in-place (only for simple cases)
+myrule <- validator(contains_exactly(
+            year=c("2000","2010")
+            ))
+out <- confront(mydat, myrule)
+out
+
+
+# Method 2: pass the keyset to 'confront', and reference it in the rule.
+# this scales to larger key sets but it needs a 'contract' between the
+# rule definition and how 'confront' is called.
+keyset <- c("2000","2010")
+myrule2 <- validator(contains_exactly(all_keys))
+out2 <- confront(mydat, myrule2, ref=list(all_keys = keyset))
+out2
+
+```
+
+
+We could try more of the functions listed in chapter 7.6 at:
+
+https://cran.r-project.org/web/packages/validate/vignettes/cookbook.html#26_Numeric_ranges
+
+

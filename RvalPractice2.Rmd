@@ -1,0 +1,395 @@
+---
+title: "Automated report example"
+author: "Author"
+date: "March 2021"
+output:
+  pdf_document: default
+  word_document: default
+  html_document: default
+params:
+  year:
+    label: Year
+    value: 2017
+    input: slider
+    min: 2010
+    max: 2021
+    step: 1
+    sep: ''
+  data:
+    label: 'Input dataset:'
+    value: some_data.csv
+    input: file
+---
+
+\vspace{0.3cm}
+
+```{r}
+
+# the parameters in the Rmd-file header can be chosen interactively, 
+# by using "Knit with parameters"
+
+# or directly, by running:
+
+# rmarkdown::render("RvalPractice0.Rmd", params = list(
+#   year = 2021,
+#   file = "our_favourite.csv"
+# ))
+
+# Try this!
+
+```
+
+# Useful links:
+
+- for downloading and installing R, RStudio on MacOSX, see the example at:
+https://web.stanford.edu/~kjytay/courses/stats32-aut2018/Session%201/Installation%20for%20Mac.html 
+
+- for using open data from the web:
+https://theodi.org/article/how-to-use-r-to-access-data-on-the-web/
+
+(_hint_: use functions like read.csv(), read.url(), various API's or the RCurl-package )
+
+
+
+# Important notes:
+
+- We may all raise issues in the github repository 
+
+https://github.com/violetacln/learnRval  
+
+about any questions, proposals, ideas we like to share!
+
+
+- We do as much as possible here, in our interactive meeting: 
+
+  - we run the examples included in these RvalPractice - files
+
+  - we could also propose new ones and/or run code on different data.
+
+
+
+# Introduction: 
+
+## Data-set and main information needed for validation
+
+about: time-variables, modeled - variables, imputed-variables, if the case
+
+Assume a data-frame has been built.
+
+Assume rules set has been built.
+
+Example of notations: 
+  
+  ```{r datadef, echo=TRUE, eval=FALSE}
+  
+## data rules, built, read into a data frame and then a validator object
+# vrules <- 
+
+## modifier rules, built, read into a data frame and then a validator object
+# mrules <- 
+
+## main data set as a data.frame
+#df <- 
+
+##data sets which need to be compared (could be same data measured at 
+##different moments in time), as data.frames
+#df1<- 
+#df2<-
+
+##time series we need to check, if it is ths case
+#tsuniv
+#tsmultiv
+```
+
+__Important note:  when we want to create our report and show all results, we make "eval=TRUE" in the R-chunks which follow.__
+
+
+
+
+# Part 2: Rules' validity and more input/output data analysis 
+
+
+
+We might like to first practice reading/writing _rules_ from/into files or dataframes, as explained in Part 2 pf the course slides.
+
+```{r, eval=FALSE, echo=TRUE}
+
+# create in R
+v <- validator(year>2000, month==6)
+
+# export rules into a file
+export_yaml(v,file="my_rules.yaml") # check where it is!
+
+# read rules from file
+v0 <- validator(.file="my_rules.yaml")
+
+# keep rules into a data frame
+df_rules <- as.data.frame(v)
+
+```
+
+
+Check structure of this objects!
+
+
+## Verifying consistency and properties of the rules themselves
+
+
+
+```{r, eval=FALSE, echo=TRUE}
+
+vrules <- validator( rule1 = price > 100
+                  , rule2 = price < 100
+                  )
+validatetools::is_infeasible(vrules)
+validatetools::detect_infeasible_rules(vrules)
+validatetools::make_feasible(vrules)
+validatetools::is_contradicted_by(vrules, "rule1")
+
+
+```
+
+
+Then let us try an imaginary trade data example:
+
+```{r, eval=FALSE, echo=TRUE}
+
+vrules <- validator( if (country == "IS") imported_value == 0
+                  , product %in% c("bananas", "potatoes")
+                  , if (product == "bananas" & country == "IS") imported_value !=0
+                  )
+
+validatetools::is_infeasible(vrules)
+validatetools::detect_infeasible_rules(vrules)
+validatetools::make_feasible(vrules)
+validatetools::is_contradicted_by(vrules, "V1")
+validatetools::simplify_rules(vrules)
+
+```
+
+
+Could we build more examples?
+
+
+
+```{r, eval=FALSE, echo=TRUE}
+
+vrules <- validator( happy >= 5, happy <=5)
+validatetools::detect_fixed_variables(vrules)
+
+validatetools::simplify_fixed_variables(vrules)
+
+```
+
+
+
+
+```{r, eval=FALSE, echo=TRUE}
+vrules <- validator( r1 = if (product_type == "exported")  export_value > 0
+                  , r2 = product_type == "exported"
+                  )
+# 
+validatetools::simplify_conditional(vrules)
+
+```
+
+
+
+
+
+Also, we could try:
+
+
+```{r, eval=FALSE, echo=TRUE}
+vrules <- validator( rule1 = rain_chance > 40
+                  , rule2 = rain_chance > 80
+                  )
+
+validatetools::detect_redundancy(vrules)
+# rule1 is superfluous
+validatetools::remove_redundancy(vrules)
+
+```
+
+
+
+Then we would like to locate the errors (which fields of which records) and impute "correct" values...
+We could debate about the correctness as well!
+
+
+We will do this in the next Rmd-practicing file (RvalPractice3.Rmd), which is optional but worth experimenting with.
+
+Before that, we complete our data exploration. 
+
+Make eval=TRUE, if you want to obtain a nice report for your favorite data!
+
+
+
+## Exploring input or output data 
+
+### Uni/Multivariate analysis
+
+```{r , echo=TRUE, eval=FALSE}
+
+ # chose your favorite data set; df <- ggplot2::diamonds 
+ # names of variables which are discrete and continuous
+df <- ggplot2::diamonds
+  dnames <-names(DataExplorer::split_columns(df)$discrete)
+  cnames <- names(DataExplorer::split_columns(df)$continuous)
+  # marginal distributions: see Part 1.
+  # cumulative distribution functions of numerical variables
+  plots_cumulative <- lapply(cnames, FUN=function(var) {
+    ggplot2::ggplot(df, ggplot2::aes(.data[[var]])) +
+      ggplot2::stat_ecdf(geom = "point") +
+      ggplot2::xlab(var) +
+      ggplot2::ylab("cumulative prob")
+  }
+  )
+  plots_cumulative
+
+  # see warning about df[[var]]),  which I replaced with .data[[var]]
+  
+```
+
+
+
+
+
+### Variability in data
+
+```{r variability, echo=TRUE, eval=FALSE}
+df <- ggplot2::diamonds
+dnames <- names(DataExplorer::split_columns(df)$discrete)
+cnames <- names(DataExplorer::split_columns(df)$continuous)
+#continuous variables ---
+print("mean, sd, skewness, standardised kurtosis and 
+        standardised 5th and 6th cumulants are
+        calculated for continuous variables, 
+        by using the package SimMultiCorrData ")
+c_res <- c("var1","", "", "", "", "", "")
+var1 <- character()
+for (var1 in cnames){
+    c_res <- cbind(c_res, c(var1,
+              SimMultiCorrData::calc_moments(df[[var1]])))
+}
+c_res
+
+#continue: discrete variables ---
+d_res <- c("var1","var2","","","", "")
+var1 <- character()
+var2 <- character()
+for (var1 in dnames){
+  for (var2 in dnames)
+    {
+    d_res <- cbind(d_res, 
+        c(var1, var2,
+          funModeling::infor_magic(input = 
+          df[[var1]],target =df[[var2]])))
+    }
+}
+d_res
+
+
+```
+
+ $en, mi, ig, gr$ are: maximum total entropy, mutual information/entropy,
+ information gain between input and target, information gain ratio 
+ between input and target
+  
+
+
+### Outliers' detection
+
+
+```{r outliers, echo=TRUE, eval=FALSE}
+
+df <- ggplot2::diamonds
+
+## qqplots of continuous variables 
+outliers_cont <- DataExplorer::plot_qq(df)
+
+## boxplots by each discrete 
+outliers_by_Discretes <- lapply(dnames, FUN=function(varr) {
+    DataExplorer::plot_boxplot( df, by=varr , 
+                  geom_boxplot_args = list("outlier.color"="red"))
+    }
+    )
+
+
+## univariate limits, Tukey method
+outliers_table_Tukey <-
+  knitr::kable(
+  lapply(cnames, FUN=function(x0) {
+  c(
+    x0,
+    funModeling::tukey_outlier(as.data.frame(df)[[x0]])
+  )
+}
+)
+#, format="markdown"
+, col.names = " ", caption="Interquartiles based: Tukey method"
+)
+outliers_table_Tukey
+
+
+## univariate limits, using Hampel (median based)
+outliers_table_Hampel <-
+   knitr::kable(
+   lapply(cnames, FUN=function(x0) {
+
+    c( x0, funModeling::hampel_outlier(df[[x0]]) )
+  }
+  )
+  #, format="markdown"
+  , col.names = " ", caption="Median based: Hampel"
+)
+outliers_table_Hampel
+
+
+
+
+```
+
+
+
+### Checking assumptions about data
+
+```{r assumptions about data, echo=TRUE, eval=FALSE}
+print("the assumption about data to be checked: distributional difference")
+
+# check if df1 and df2 come from different distributions:
+# use resampling methods and/or KL measure
+# example 
+df1 = diamonds[1:501,]$price
+df2= diamonds[1000:1500,]$price
+## or we could get random samples
+## or could compare other sets , like:
+df1a <- diamonds[which(diamonds$color=="D"),]$price[1:100]
+df2a <- diamonds[which(diamonds$color=="G"),]$price[1:100]
+
+#continuous
+  library(LaplacesDemon)
+  kld <- LaplacesDemon::KLD(px=df1,py=df2)
+  kld
+  
+#or resampling based tests, using sm::density.compare
+  group.index <- rep( 1:2, c(length(df1), length(df2)) )
+  sm::sm.density.compare(c(px=df1,py=df2), 
+                         group = group.index, model = "equal")
+  
+## note that a plot is generated automatically by this function
+
+  
+  group.index <- rep( 1:2, c(length(df1a), length(df2a)) )
+  sm::sm.density.compare(c(px=df1a,py=df2a), 
+                         group = group.index, model = "equal")
+ 
+# may investigate other choices of data frames to be compared!  
+   
+```
+
+
+Do you know some other interesting methods/packages for such checks?
+
+
+
