@@ -223,10 +223,17 @@ summary(out2)
 # data frame of combinations we do not allow
 our_forbidden <- data.frame(cut="Fa*", clarity="VVS*")
   
+## here there will be an error in rule+validator construction!:
 rules3 <- validator(does_not_contain(glob(forbidden_keys=our_forbidden)))
 out3 <- confront(diamonds, rules3)
 
 summary(out3)
+
+# check why!
+# errors(out3) 
+# warnings(out3)
+# the correct construction is in a separte file of the present repository: 
+# ex_1_3_from_RvalPractice1.R
 
 # violating(diamonds, out3)
 
