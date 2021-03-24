@@ -7,3 +7,10 @@ REFERENCES - for rule based data validation:
 - A very good cookbook of the validate-package and  not only:
 
 MPJ van der Loo (2020) The Data Validation Cookbook version 1.0.1. https://data-cleaning.github.io/validate
+
+
+-- For the translator of rules, from SQL into R (not oupdated recently but will be soon):
+
+https://github.com/hagstofan/TranStoR
+
+
