@@ -1,0 +1,14 @@
+## here is the corrected code for the example which had two typos and one incomplete line!
+
+d <- data.frame(postcode =c("170", "600", "101"), 
+                city = c("Seltjarnarnes", "Akureyri", "Reykjavik"))
+                
+vfd <- validator(city %in% c(city_reference$city)) 
+
+d1 <-data.frame(d$city) ### 
+
+summary(confront(d, vfd, ref=list(city_reference=d1))) ### 
+
+errors(confront(d, vfd, ref=list(city_reference=d1)))  ### 
+
+# it woks if one pays attention when writing code :)
