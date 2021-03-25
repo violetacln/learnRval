@@ -22,4 +22,8 @@ https://web.stanford.edu/~hastie/Papers/gap.pdf
 https://link.springer.com/content/pdf/10.1007/s10994-007-5006-x.pdf 
 (about association rules discovery)
 
+https://cran.r-project.org/web/packages/RJDemetra/index.html
+(the R-engine for Demetra software for time series seasonality adjustments)
+
+
 ...
